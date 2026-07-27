@@ -31,7 +31,11 @@ services:
     depends_on:
       - worker-backtest
     ports:
-      - "5080:8080"
+      # Host port is configurable because 5080 is a popular default and
+      # collides easily. Only the host side moves — the container still listens
+      # on 8080, and the frontend reaches it over the compose network, so
+      # changing this cannot break the UI.
+      - "${PARALLELS_API_PORT:-5080}:8080"
     volumes:
       - ../data:/data:ro
       - ../results:/results
@@ -73,7 +77,7 @@ services:
     working_dir: /web
     command: sh -c "npm install && npm run dev -- --host 0.0.0.0"
     ports:
-      - "5173:5173"
+      - "${PARALLELS_WEB_PORT:-5173}:5173"
     volumes:
       - ../src/Parallels.Web:/web
       # Keeps the container's node_modules off the host mount. Without this the
