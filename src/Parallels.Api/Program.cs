@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Diagnostics;
 using Parallels.Api.Dispatch;
 using Parallels.Api.Services;
 using Parallels.Api.Storage;
@@ -32,6 +33,29 @@ var storage = new StorageOptions
 
 Directory.CreateDirectory(storage.StateRoot);
 Directory.CreateDirectory(storage.ResultsRoot);
+
+// CreateDirectory on an existing path succeeds whatever its permissions, so it
+// proves nothing about being able to write. Left unchecked, a read-only or
+// wrongly-owned mount passes startup cleanly and then throws on the first write
+// — surfacing as an unexplained 500 on the first backtest submission rather than
+// as the mount problem it is. Probe for real instead.
+foreach (var (name, path) in new[] { ("results", storage.ResultsRoot), ("state", storage.StateRoot) })
+{
+    var probe = Path.Combine(path, $".write-probe-{Environment.ProcessId}");
+    try
+    {
+        File.WriteAllText(probe, "");
+        File.Delete(probe);
+    }
+    catch (Exception ex)
+    {
+        throw new InvalidOperationException(
+            $"The {name} directory '{path}' is not writable by this process (running as uid " +
+            $"{(OperatingSystem.IsWindows() ? "n/a" : Environment.UserName)}). Backtests cannot be " +
+            $"recorded without it. If running in Docker, check that the volume is mounted read-write " +
+            $"and that the host directory is writable by the container user. Underlying error: {ex.Message}", ex);
+    }
+}
 
 var dataFolder = Environment.GetEnvironmentVariable("PARALLELS_DATA_FOLDER")
                  ?? Path.Combine(repoRoot, "data");
@@ -105,6 +129,35 @@ builder.Services.AddCors(options => options.AddDefaultPolicy(policy =>
           .AllowAnyMethod()));
 
 var app = builder.Build();
+
+// An unhandled exception otherwise returns an empty 500, which tells whoever is
+// looking at the network tab precisely nothing and makes every failure a
+// container-logs expedition. This is an operator-facing tool on a trusted
+// network, so the exception message is worth more in the response than it costs.
+app.UseExceptionHandler(errorApp => errorApp.Run(async context =>
+{
+    var feature = context.Features.Get<IExceptionHandlerPathFeature>();
+    var error = feature?.Error;
+
+    app.Logger.LogError(error, "Unhandled exception handling {Method} {Path}",
+        context.Request.Method, feature?.Path);
+
+    context.Response.StatusCode = StatusCodes.Status500InternalServerError;
+    context.Response.ContentType = "application/problem+json";
+
+    await context.Response.WriteAsJsonAsync(new
+    {
+        title = "The API failed to handle this request.",
+        status = 500,
+        path = feature?.Path,
+        exception = error?.GetType().FullName,
+        detail = error?.Message,
+        // The first few frames are usually enough to place the failure without
+        // going to the logs at all.
+        stack = error?.StackTrace?.Split('\n').Take(6).Select(l => l.TrimEnd()).ToArray(),
+    });
+}));
+
 app.UseCors();
 
 // ---------------------------------------------------------------------------
