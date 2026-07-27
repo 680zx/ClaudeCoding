@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- The one shared algorithm host class plus every AlphaModel. A LEAN
+       reference is expected and correct here (spec 3.1) — strategy logic
+       belongs against LEAN's own types, not abstracted away from them. -->
+
+  <ItemGroup>
+    <ProjectReference Include="..\Parallels.Contracts\Parallels.Contracts.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="QuantConnect.Common" />
+    <PackageReference Include="QuantConnect.Algorithm" />
+    <PackageReference Include="QuantConnect.Indicators" />
+    <PackageReference Include="Newtonsoft.Json" />
+  </ItemGroup>
+
+</Project>

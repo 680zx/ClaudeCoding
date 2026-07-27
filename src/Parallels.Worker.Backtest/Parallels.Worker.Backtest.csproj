@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <AssemblyName>Parallels.Worker.Backtest</AssemblyName>
+    <RootNamespace>Parallels.Worker.Backtest</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Parallels.Contracts\Parallels.Contracts.csproj" />
+    <ProjectReference Include="..\Parallels.Strategies\Parallels.Strategies.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="QuantConnect.Lean.Engine" />
+    <PackageReference Include="QuantConnect.AlgorithmFactory" />
+    <PackageReference Include="QuantConnect.Configuration" />
+    <PackageReference Include="QuantConnect.Logging" />
+    <PackageReference Include="QuantConnect.Common" />
+    <PackageReference Include="Newtonsoft.Json" />
+  </ItemGroup>
+
+</Project>

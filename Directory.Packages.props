@@ -1,0 +1,37 @@
+<Project>
+
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+    <CentralPackageTransitivePinningEnabled>false</CentralPackageTransitivePinningEnabled>
+    <!-- Single source of truth for the LEAN version. Every LEAN package must
+         resolve to the same build: the engine, the algorithm assembly and the
+         brokerage plugins are versioned in lockstep upstream and mixing them
+         produces load-time type mismatches. -->
+    <LeanVersion>2.5.17924</LeanVersion>
+  </PropertyGroup>
+
+  <ItemGroup Label="LEAN">
+    <PackageVersion Include="QuantConnect.Common" Version="$(LeanVersion)" />
+    <PackageVersion Include="QuantConnect.Algorithm" Version="$(LeanVersion)" />
+    <PackageVersion Include="QuantConnect.AlgorithmFactory" Version="$(LeanVersion)" />
+    <PackageVersion Include="QuantConnect.Indicators" Version="$(LeanVersion)" />
+    <PackageVersion Include="QuantConnect.Configuration" Version="$(LeanVersion)" />
+    <PackageVersion Include="QuantConnect.Logging" Version="$(LeanVersion)" />
+    <PackageVersion Include="QuantConnect.Lean.Engine" Version="$(LeanVersion)" />
+    <PackageVersion Include="QuantConnect.Brokerages" Version="$(LeanVersion)" />
+    <PackageVersion Include="QuantConnect.Brokerages.Binance" Version="$(LeanVersion)" />
+  </ItemGroup>
+
+  <ItemGroup Label="Runtime">
+    <PackageVersion Include="Newtonsoft.Json" Version="13.0.3" />
+    <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="10.0.10" />
+  </ItemGroup>
+
+  <ItemGroup Label="Test">
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
+    <PackageVersion Include="xunit" Version="2.9.3" />
+    <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.4" />
+    <PackageVersion Include="coverlet.collector" Version="6.0.4" />
+  </ItemGroup>
+
+</Project>

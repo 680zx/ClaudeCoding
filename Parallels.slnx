@@ -1,0 +1,12 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Parallels.Api/Parallels.Api.csproj" />
+    <Project Path="src/Parallels.Contracts/Parallels.Contracts.csproj" />
+    <Project Path="src/Parallels.Strategies/Parallels.Strategies.csproj" />
+    <Project Path="src/Parallels.Worker.Backtest/Parallels.Worker.Backtest.csproj" />
+    <Project Path="src/Parallels.Worker.Live.Binance/Parallels.Worker.Live.Binance.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Parallels.Tests/Parallels.Tests.csproj" />
+  </Folder>
+</Solution>

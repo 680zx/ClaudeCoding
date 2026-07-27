@@ -1,0 +1,6 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Ports and DTOs only. Deliberately references NOTHING: not LEAN, not
+       ASP.NET, not the workers. Spec 3.1 dependency direction. -->
+
+</Project>

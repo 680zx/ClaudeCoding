@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <!-- Spec 3.1: Api references Contracts ONLY — never Strategies, never either
+       Worker project as a library. It talks to workers across a process
+       boundary (docker exec / child process), not by linking them in. -->
+
+  <ItemGroup>
+    <ProjectReference Include="..\Parallels.Contracts\Parallels.Contracts.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" />
+  </ItemGroup>
+
+</Project>

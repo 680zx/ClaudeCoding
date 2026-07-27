@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Parallels.Contracts\Parallels.Contracts.csproj" />
+    <ProjectReference Include="..\..\src\Parallels.Strategies\Parallels.Strategies.csproj" />
+    <ProjectReference Include="..\..\src\Parallels.Worker.Live.Binance\Parallels.Worker.Live.Binance.csproj" />
+    <ProjectReference Include="..\..\src\Parallels.Api\Parallels.Api.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="coverlet.collector" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+</Project>
