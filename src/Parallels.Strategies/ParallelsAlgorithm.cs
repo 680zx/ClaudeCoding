@@ -182,6 +182,34 @@ public class ParallelsAlgorithm : QCAlgorithm
         if (orderEvent.Status == OrderStatus.Filled)
             Log($"[fill] {orderEvent.Direction} {orderEvent.FillQuantity} {orderEvent.Symbol.Value} " +
                 $"@ {orderEvent.FillPrice} fee={orderEvent.OrderFee}");
+
+        // The gate needs every order event, not just fills: it releases reserved
+        // exposure and in-flight idempotency keys on cancellation and rejection
+        // too, and missing those would leak budget until restart.
+        _session.OrderGate.OnOrderEvent(this, orderEvent);
+
+        try
+        {
+            _session.ProtectiveOrders?.OnFill(this, orderEvent);
+        }
+        catch (Exception ex)
+        {
+            // A protective-order failure must be loud but must not kill the
+            // session: the entry has already filled, and tearing the process down
+            // here would leave that position with no supervision at all.
+            Error($"[protective] failed to maintain protective orders for {orderEvent.Symbol.Value}: {ex}");
+        }
+    }
+
+    /// <summary>Protective levels the alpha trading this symbol chose at entry.</summary>
+    public bool TryGetProtectiveLevels(QuantConnect.Symbol symbol, out decimal stopPrice, out decimal targetPrice)
+    {
+        foreach (var model in _trendModels.Values)
+            if (model.TryGetProtectiveLevels(symbol, out stopPrice, out targetPrice)) return true;
+
+        stopPrice = 0m;
+        targetPrice = 0m;
+        return false;
     }
 
     public override void OnEndOfAlgorithm()

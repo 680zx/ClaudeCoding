@@ -9,6 +9,12 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- SessionContext's single-publish guard is deliberately not resettable in
+         production. Tests need to reset it to assert the guard itself fires. -->
+    <InternalsVisibleTo Include="Parallels.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="QuantConnect.Common" />
     <PackageReference Include="QuantConnect.Algorithm" />
     <!-- Portfolio construction models (InsightWeighting...) ship in this

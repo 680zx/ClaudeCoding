@@ -29,6 +29,12 @@ public sealed class ParallelsSession
     public bool VerboseSignals { get; init; }
 
     /// <summary>
+    /// Places resting stop/target orders after an entry fills. Live supplies one;
+    /// backtest leaves it null and evaluates its stop inside the model instead.
+    /// </summary>
+    public IProtectiveOrderPolicy? ProtectiveOrders { get; init; }
+
+    /// <summary>
     /// Sits in front of order placement. In backtest this is exchange-filter
     /// rounding only; live additionally supplies the aggregate risk and rate
     /// budget (spec 3.2). No alpha can bypass it, because alphas emit insights

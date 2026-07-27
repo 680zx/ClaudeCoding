@@ -1,4 +1,5 @@
 using Parallels.Contracts;
+using Parallels.Strategies.Execution;
 using QuantConnect;
 using QuantConnect.Algorithm;
 using QuantConnect.Algorithm.Framework.Alphas;
@@ -22,7 +23,7 @@ namespace Parallels.Strategies.Alphas;
 /// were updated with bars at or before the bar being acted on, and the emitted
 /// insight is dated at the algorithm's current time. Nothing reads ahead.
 /// </summary>
-public sealed class TrendFollowingAlphaModel : AlphaModel
+public sealed class TrendFollowingAlphaModel : AlphaModel, IProtectiveLevelSource
 {
     private readonly TrendFollowingParameters _parameters;
     private readonly Dictionary<Symbol, SymbolState> _state = [];
@@ -189,6 +190,21 @@ public sealed class TrendFollowingAlphaModel : AlphaModel
 
     /// <summary>Longest lookback the model needs before its first real decision.</summary>
     public int WarmUpBars => Math.Max(_parameters.SlowPeriod, _parameters.AtrPeriod) + 1;
+
+    /// <inheritdoc />
+    public bool TryGetProtectiveLevels(Symbol symbol, out decimal stopPrice, out decimal targetPrice)
+    {
+        if (_state.TryGetValue(symbol, out var state) && state.IsLong)
+        {
+            stopPrice = state.StopPrice;
+            targetPrice = state.TargetPrice;
+            return true;
+        }
+
+        stopPrice = 0m;
+        targetPrice = 0m;
+        return false;
+    }
 
     private sealed class SymbolState(
         ExponentialMovingAverage fast,
