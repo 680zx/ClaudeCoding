@@ -1,0 +1,37 @@
+# Parallels.Api — references Contracts only, and talks to workers across a
+# process boundary rather than linking them in.
+#
+# The image includes the Docker CLI because dispatching a backtest means
+# `docker exec` into the warm worker container, and managing the live session
+# means starting and stopping its container. The daemon socket is mounted at run
+# time (see docker-compose.yml); that is a deliberate and significant grant of
+# privilege, noted in the README's limitations.
+
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+WORKDIR /src
+
+COPY Directory.Build.props Directory.Packages.props ./
+COPY src/Parallels.Contracts/ src/Parallels.Contracts/
+COPY src/Parallels.Api/ src/Parallels.Api/
+
+RUN dotnet publish src/Parallels.Api -c Release -o /app --no-self-contained
+
+FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
+WORKDIR /app
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends docker.io \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY --from=build /app ./
+
+VOLUME ["/data", "/results", "/state"]
+
+ENV PARALLELS_DATA_FOLDER=/data \
+    PARALLELS_RESULTS_PATH=/results \
+    PARALLELS_STATE_PATH=/state \
+    PARALLELS_BACKTEST_CONTAINER=parallels-worker-backtest \
+    ASPNETCORE_URLS=http://0.0.0.0:8080
+
+EXPOSE 8080
+ENTRYPOINT ["dotnet", "Parallels.Api.dll"]

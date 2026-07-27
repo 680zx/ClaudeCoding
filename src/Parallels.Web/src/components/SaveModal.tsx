@@ -71,7 +71,7 @@ export function SaveModal({
           <>
             <label className="field">
               <span className="field-label">Name</span>
-              <input value={name} onChange={(e) => setName(e.target.value)} autoFocus />
+              <input type="text" value={name} onChange={(e) => setName(e.target.value)} autoFocus />
             </label>
 
             <label className="field">

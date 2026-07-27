@@ -226,7 +226,8 @@ function AlphaEditor({
         <div className="control-row">
           <label className="field">
             <span className="field-label">Name</span>
-            <input value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} />
+            <input type="text" value={draft.name}
+              onChange={(e) => setDraft({ ...draft, name: e.target.value })} />
           </label>
 
           <label className="field">

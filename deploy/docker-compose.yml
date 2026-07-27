@@ -1,0 +1,75 @@
+# Local single-host development stack.
+#
+# The results volume is shared by the API and every worker, which is what lets
+# the API read back what a worker wrote. That assumes single-host deployment —
+# stated plainly in README.md rather than engineered around: a genuinely
+# multi-node deployment needs a network-shared volume or object storage, and
+# that is not built here.
+
+name: parallels
+
+services:
+  worker-backtest:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile.worker-backtest
+    image: parallels/worker-backtest:latest
+    # Fixed name because the API execs into it by name.
+    container_name: parallels-worker-backtest
+    # Stays warm and idle; jobs arrive as `docker exec`, never `docker run`.
+    restart: unless-stopped
+    volumes:
+      - ../data:/data:ro
+      - ../results:/results
+
+  api:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile.api
+    image: parallels/api:latest
+    container_name: parallels-api
+    depends_on:
+      - worker-backtest
+    ports:
+      - "5080:8080"
+    volumes:
+      - ../data:/data:ro
+      - ../results:/results
+      - ../state:/state
+      # Lets the API exec into the warm backtest container and manage the live
+      # container's lifecycle. Mounting the daemon socket grants control of the
+      # host's Docker — appropriate for local development, not for a shared or
+      # internet-exposed host.
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      PARALLELS_BACKTEST_CONTAINER: parallels-worker-backtest
+      # Credentials are passed through to the live container at launch and are
+      # never written into stored desired state.
+      BINANCE_API_KEY: ${BINANCE_API_KEY:-}
+      BINANCE_API_SECRET: ${BINANCE_API_SECRET:-}
+      BINANCE_ENVIRONMENT: ${BINANCE_ENVIRONMENT:-testnet}
+      # Must be explicitly "true" for the live worker to trade real funds.
+      PARALLELS_CONFIRM_MAINNET: ${PARALLELS_CONFIRM_MAINNET:-false}
+
+  # Built here so `docker compose build` produces the image the API launches,
+  # but never started by compose: the API owns its lifecycle, starting it when
+  # the first alpha is enabled and stopping it when none remain.
+  worker-live-binance:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile.worker-live-binance
+    image: parallels/worker-live-binance:latest
+    profiles: ["never-start-directly"]
+
+  web:
+    image: node:22-alpine
+    working_dir: /web
+    command: sh -c "npm install && npm run dev -- --host 0.0.0.0"
+    ports:
+      - "5173:5173"
+    volumes:
+      - ../src/Parallels.Web:/web
+    environment:
+      PARALLELS_API_URL: http://api:8080
+    depends_on:
+      - api

@@ -1,0 +1,36 @@
+# Broker-agnostic backtest worker.
+#
+# The container is long-running and stays warm; the API dispatches each job with
+# `docker exec` into it (spec 3.5). That gives a genuinely fresh OS process per
+# job — so LEAN's process-wide Composer/Config state is never shared between two
+# backtests — without paying container creation on every run.
+#
+# Hence the idle entrypoint: this image's job is to be available, not to run one
+# backtest and exit.
+
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+WORKDIR /src
+
+COPY Directory.Build.props Directory.Packages.props ./
+COPY src/Parallels.Contracts/ src/Parallels.Contracts/
+COPY src/Parallels.Strategies/ src/Parallels.Strategies/
+COPY src/Parallels.Worker.Backtest/ src/Parallels.Worker.Backtest/
+
+RUN dotnet publish src/Parallels.Worker.Backtest \
+        -c Release -o /app --no-self-contained
+
+FROM mcr.microsoft.com/dotnet/runtime:10.0 AS runtime
+WORKDIR /app
+COPY --from=build /app ./
+
+# Mounted at run time. Both must be visible to the API as well: results/ is how
+# the API reads a run's output back, which assumes single-host deployment — see
+# the known limitations in README.md.
+VOLUME ["/data", "/results"]
+
+ENV PARALLELS_DATA_FOLDER=/data \
+    PARALLELS_RESULTS_PATH=/results \
+    DOTNET_gcServer=1
+
+# Idle. Work arrives via `docker exec ... dotnet Parallels.Worker.Backtest.dll --job-stdin`.
+ENTRYPOINT ["tail", "-f", "/dev/null"]

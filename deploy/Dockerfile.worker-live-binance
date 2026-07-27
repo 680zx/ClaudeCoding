@@ -1,0 +1,41 @@
+# Binance-specific live worker. One image per broker (spec 3.2).
+#
+# A second broker means a new Dockerfile.worker-live-<broker> and a new worker
+# project, not an edit here. Bundling every broker's SDK into one universal live
+# image would put every broker's dependency and vulnerability surface into every
+# deployment regardless of which one it actually trades through.
+#
+# Unlike the backtest image this one runs its process directly: the container IS
+# the session. A desired-state change restarts the container, because LEAN does
+# not reliably support adding an AlphaModel after Initialize has run.
+
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+WORKDIR /src
+
+COPY Directory.Build.props Directory.Packages.props ./
+COPY src/Parallels.Contracts/ src/Parallels.Contracts/
+COPY src/Parallels.Strategies/ src/Parallels.Strategies/
+COPY src/Parallels.Worker.Live.Binance/ src/Parallels.Worker.Live.Binance/
+
+RUN dotnet publish src/Parallels.Worker.Live.Binance \
+        -c Release -o /app --no-self-contained
+
+FROM mcr.microsoft.com/dotnet/runtime:10.0 AS runtime
+WORKDIR /app
+COPY --from=build /app ./
+
+VOLUME ["/data", "/results"]
+
+ENV PARALLELS_DATA_FOLDER=/data \
+    PARALLELS_RESULTS_PATH=/results \
+    BINANCE_ENVIRONMENT=testnet \
+    DOTNET_gcServer=1
+
+# PARALLELS_LIVE_CONFIG carries the desired state and is set by the API at
+# launch (spec 3.5) — never written to a file and read back across a filesystem
+# both sides are merely assumed to share.
+#
+# Credentials come from the environment too and are never written into stored
+# desired state. Targeting mainnet additionally requires confirmMainnet on the
+# session, or the worker refuses to start.
+ENTRYPOINT ["dotnet", "Parallels.Worker.Live.Binance.dll"]
