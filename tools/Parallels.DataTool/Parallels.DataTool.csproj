@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Development utility: converts Binance public kline archives into LEAN's
+       own on-disk data format. Not part of the runtime dependency graph — no
+       project references it. -->
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <AssemblyName>Parallels.DataTool</AssemblyName>
+    <RootNamespace>Parallels.DataTool</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="QuantConnect.Common" />
+  </ItemGroup>
+
+</Project>

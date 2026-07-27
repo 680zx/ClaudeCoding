@@ -13,6 +13,7 @@
   <ItemGroup Label="LEAN">
     <PackageVersion Include="QuantConnect.Common" Version="$(LeanVersion)" />
     <PackageVersion Include="QuantConnect.Algorithm" Version="$(LeanVersion)" />
+    <PackageVersion Include="QuantConnect.Algorithm.Framework" Version="$(LeanVersion)" />
     <PackageVersion Include="QuantConnect.AlgorithmFactory" Version="$(LeanVersion)" />
     <PackageVersion Include="QuantConnect.Indicators" Version="$(LeanVersion)" />
     <PackageVersion Include="QuantConnect.Configuration" Version="$(LeanVersion)" />

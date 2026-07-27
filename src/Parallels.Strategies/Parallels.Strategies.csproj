@@ -11,6 +11,9 @@
   <ItemGroup>
     <PackageReference Include="QuantConnect.Common" />
     <PackageReference Include="QuantConnect.Algorithm" />
+    <!-- Portfolio construction models (InsightWeighting...) ship in this
+         assembly rather than QuantConnect.Algorithm. -->
+    <PackageReference Include="QuantConnect.Algorithm.Framework" />
     <PackageReference Include="QuantConnect.Indicators" />
     <PackageReference Include="Newtonsoft.Json" />
   </ItemGroup>
