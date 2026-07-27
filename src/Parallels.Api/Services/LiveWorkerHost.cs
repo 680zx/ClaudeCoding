@@ -28,8 +28,24 @@ public sealed record LiveHostOptions
     public string ContainerName { get; init; } = "parallels-worker-live-binance";
     public string ImageName { get; init; } = "parallels/worker-live-binance:latest";
     public required string WorkerDllPath { get; init; }
+
+    /// <summary>Paths as *this* process sees them.</summary>
     public required string DataFolder { get; init; }
     public required string ResultsRoot { get; init; }
+
+    /// <summary>
+    /// The same two directories as the <em>Docker host</em> sees them.
+    ///
+    /// These are not interchangeable with the properties above, and conflating
+    /// them is a silent failure. When the API is itself containerised, its data
+    /// folder is <c>/data</c> inside its own filesystem — but a <c>-v</c>
+    /// argument is interpreted by the daemon on the host, so passing <c>/data</c>
+    /// there mounts the host's <c>/data</c> (usually nonexistent, hence an empty
+    /// read-only mount) instead of the repository folder. The live worker would
+    /// then start, find no market data, and simply never trade.
+    /// </summary>
+    public string? HostDataFolder { get; init; }
+    public string? HostResultsRoot { get; init; }
 
     /// <summary>Credentials are read from the API's own environment and passed through; never persisted to state.</summary>
     public string[] PassthroughEnvVars { get; init; } =
@@ -74,12 +90,18 @@ public sealed class DockerLiveWorkerHost(LiveHostOptions options, ILogger<Docker
     {
         await StopAsync(ct);
 
+        // Bind mounts are resolved by the daemon on the host, so they must use
+        // host paths. Falling back to this process's own paths is correct only
+        // when the API is not itself containerised.
+        var hostData = options.HostDataFolder ?? options.DataFolder;
+        var hostResults = options.HostResultsRoot ?? options.ResultsRoot;
+
         var arguments = new List<string>
         {
             "run", "-d", "--name", options.ContainerName,
             "-e", $"{ParallelsJson.LiveConfigEnvVar}={ParallelsJson.Serialize(config)}",
-            "-v", $"{options.DataFolder}:/data:ro",
-            "-v", $"{options.ResultsRoot}:/results",
+            "-v", $"{hostData}:/data:ro",
+            "-v", $"{hostResults}:/results",
         };
 
         foreach (var name in options.PassthroughEnvVars)

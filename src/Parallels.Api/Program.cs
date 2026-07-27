@@ -80,6 +80,11 @@ builder.Services.AddSingleton<ILiveWorkerHost>(sp =>
         WorkerDllPath = liveWorkerDll,
         DataFolder = dataFolder,
         ResultsRoot = storage.ResultsRoot,
+        // Set by compose when the API runs in a container: `docker run -v` is
+        // evaluated by the daemon on the host, so the live container has to be
+        // given host paths, not this process's own.
+        HostDataFolder = Environment.GetEnvironmentVariable("PARALLELS_HOST_DATA_FOLDER"),
+        HostResultsRoot = Environment.GetEnvironmentVariable("PARALLELS_HOST_RESULTS_PATH"),
     };
 
     var docker = new DockerLiveWorkerHost(liveOptions, sp.GetRequiredService<ILogger<DockerLiveWorkerHost>>());

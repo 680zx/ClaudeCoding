@@ -43,6 +43,13 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
     environment:
       PARALLELS_BACKTEST_CONTAINER: parallels-worker-backtest
+      # The API launches the live container itself, and `docker run -v` is
+      # resolved by the daemon on the host — so it needs host paths, not the
+      # /data and /results it sees internally. Required rather than defaulted:
+      # an empty value would silently mount the host's /data (nonexistent) and
+      # the live worker would start, find no data, and never trade.
+      PARALLELS_HOST_DATA_FOLDER: ${PARALLELS_HOST_ROOT:?set PARALLELS_HOST_ROOT to the absolute path of this checkout}/data
+      PARALLELS_HOST_RESULTS_PATH: ${PARALLELS_HOST_ROOT}/results
       # Credentials are passed through to the live container at launch and are
       # never written into stored desired state.
       BINANCE_API_KEY: ${BINANCE_API_KEY:-}
@@ -69,7 +76,14 @@ services:
       - "5173:5173"
     volumes:
       - ../src/Parallels.Web:/web
+      # Keeps the container's node_modules off the host mount. Without this the
+      # container would reuse whatever the host installed, and native binaries
+      # built for the host will not run on alpine.
+      - web-node-modules:/web/node_modules
     environment:
       PARALLELS_API_URL: http://api:8080
     depends_on:
       - api
+
+volumes:
+  web-node-modules:
