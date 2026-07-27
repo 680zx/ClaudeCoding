@@ -1,0 +1,15 @@
+{
+  "name": "parallels-uitests",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "description": "Browser-driven checks of the running UI. Kept out of Parallels.Web's dependency graph on purpose: Playwright's postinstall downloads browser binaries, which breaks the SPA's own container image (node:22-alpine is musl, and the download is large regardless).",
+  "scripts": {
+    "backtest": "node backtest-tab.mjs",
+    "save": "node save-modal.mjs",
+    "live": "node live-tab.mjs"
+  },
+  "devDependencies": {
+    "playwright": "^1.62.0"
+  }
+}

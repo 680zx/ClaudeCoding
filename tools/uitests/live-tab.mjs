@@ -2,7 +2,7 @@
 // (spec 7, phase 3): add an alpha, toggle it, edit it, then delete it.
 import { chromium } from 'playwright';
 
-const browser = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome' });
+const browser = await chromium.launch(process.env.CHROMIUM ? { executablePath: process.env.CHROMIUM } : {});
 const page = await browser.newPage({ viewport: { width: 1500, height: 1100 } });
 
 const errors = [];

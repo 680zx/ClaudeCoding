@@ -1,5 +1,5 @@
 import { chromium } from 'playwright';
-const browser = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome' });
+const browser = await chromium.launch(process.env.CHROMIUM ? { executablePath: process.env.CHROMIUM } : {});
 const page = await browser.newPage({ viewport: { width: 1400, height: 1000 } });
 await page.goto('http://127.0.0.1:5173/', { waitUntil: 'networkidle' });
 await page.waitForSelector('.param-grid input');
