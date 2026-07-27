@@ -92,9 +92,30 @@ public sealed class DockerLiveWorkerHost(LiveHostOptions options, ILogger<Docker
 
         // Bind mounts are resolved by the daemon on the host, so they must use
         // host paths. Falling back to this process's own paths is correct only
-        // when the API is not itself containerised.
-        var hostData = options.HostDataFolder ?? options.DataFolder;
-        var hostResults = options.HostResultsRoot ?? options.ResultsRoot;
+        // when the API is not itself containerised — inside a container those
+        // are /data and /results, which the daemon would resolve against the
+        // host root and silently mount the wrong (usually empty) directories.
+        //
+        // Checked here rather than as a compose-level required variable: the
+        // paths only matter when a live container is actually being launched,
+        // and making them mandatory up front broke routine `down`, `logs` and
+        // `ps` for everyone who never touches live trading.
+        var hostData = Coalesce(options.HostDataFolder, options.DataFolder);
+        var hostResults = Coalesce(options.HostResultsRoot, options.ResultsRoot);
+
+        if (RunningInContainer() && (options.HostDataFolder is null || options.HostResultsRoot is null))
+        {
+            throw new InvalidOperationException(
+                "Refusing to launch the live worker: this API is running inside a container, but " +
+                "PARALLELS_HOST_DATA_FOLDER / PARALLELS_HOST_RESULTS_PATH are not set. Docker resolves " +
+                "-v arguments against the host filesystem, so without them the live container would " +
+                "mount the host's /data and /results instead of this checkout — it would start, find no " +
+                "market data, and never trade. Set PARALLELS_HOST_ROOT to the absolute path of the " +
+                "checkout and restart the API.");
+        }
+
+        static string Coalesce(string? preferred, string fallback) =>
+            string.IsNullOrWhiteSpace(preferred) ? fallback : preferred;
 
         var arguments = new List<string>
         {
@@ -124,6 +145,14 @@ public sealed class DockerLiveWorkerHost(LiveHostOptions options, ILogger<Docker
         await ProcessRunner.RunAsync("docker", ["rm", "-f", options.ContainerName],
             null, TimeSpan.FromSeconds(30), ct);
     }
+
+    /// <summary>
+    /// Whether this process is itself containerised, which is what makes its own
+    /// paths unusable as bind-mount sources.
+    /// </summary>
+    private static bool RunningInContainer() =>
+        Environment.GetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER") == "true"
+        || File.Exists("/.dockerenv");
 }
 
 /// <summary>

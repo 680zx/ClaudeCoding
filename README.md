@@ -155,8 +155,39 @@ dotnet run --project src/Parallels.Worker.Backtest -- \
     --job "$(cat job.json)" --data-folder ./data --results ./results --verbose
 ```
 
-With Docker available, `deploy/docker-compose.yml` brings up the warm backtest
-container, the API and the frontend.
+### Docker
+
+```bash
+# Data must exist on the host first — containers mount it, they do not fetch it.
+dotnet run --project tools/Parallels.DataTool -- \
+    --symbol BTCUSDT --interval 1h --start 2023-01 --end 2024-12 --data-folder ./data
+mkdir -p results state
+
+docker compose -f deploy/docker-compose.yml up -d --build
+```
+
+UI on `http://localhost:5173`, API on `http://localhost:5080`. Override
+`PARALLELS_API_PORT` / `PARALLELS_WEB_PORT` if those collide.
+
+Confirm dispatch is actually going through Docker rather than falling back:
+
+```bash
+curl -s http://localhost:5080/api/system | jq .dispatchMechanism
+# "docker exec into container 'parallels-worker-backtest'"
+```
+
+`worker-backtest` stays up idle and each job is a `docker exec` into it — a
+fresh process per job without recreating the container.
+`worker-live-binance` is built but never started by compose: the API owns its
+lifecycle, launching it when the first alpha is enabled.
+
+**For live trading only**, copy `deploy/.env.example` to `deploy/.env` and set
+`PARALLELS_HOST_ROOT` to the absolute path of this checkout. The API launches
+the live container with `docker run -v`, and the daemon resolves those paths
+against the host rather than against the API container — without it the live
+worker would mount the host's `/data`, find no market data, and never trade. The
+API refuses to launch it with an explicit message instead of failing that way.
+Backtesting needs none of this.
 
 ---
 

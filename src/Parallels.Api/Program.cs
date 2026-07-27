@@ -82,9 +82,10 @@ builder.Services.AddSingleton<ILiveWorkerHost>(sp =>
         ResultsRoot = storage.ResultsRoot,
         // Set by compose when the API runs in a container: `docker run -v` is
         // evaluated by the daemon on the host, so the live container has to be
-        // given host paths, not this process's own.
-        HostDataFolder = Environment.GetEnvironmentVariable("PARALLELS_HOST_DATA_FOLDER"),
-        HostResultsRoot = Environment.GetEnvironmentVariable("PARALLELS_HOST_RESULTS_PATH"),
+        // given host paths, not this process's own. Either name the two paths
+        // outright, or set PARALLELS_HOST_ROOT and let them be derived.
+        HostDataFolder = HostPath("PARALLELS_HOST_DATA_FOLDER", "data"),
+        HostResultsRoot = HostPath("PARALLELS_HOST_RESULTS_PATH", "results"),
     };
 
     var docker = new DockerLiveWorkerHost(liveOptions, sp.GetRequiredService<ILogger<DockerLiveWorkerHost>>());
@@ -274,6 +275,22 @@ app.Run();
 
 static string NewJobId() =>
     $"bt-{DateTimeOffset.UtcNow:yyyyMMddTHHmmss}-{Guid.NewGuid().ToString("n")[..6]}";
+
+/// <summary>
+/// Resolves a bind-mount source as the Docker host sees it, from an explicit
+/// variable or by joining PARALLELS_HOST_ROOT. Returns null when neither is set,
+/// so "absent" stays distinguishable from a wrong-but-present path — which is
+/// what lets the live worker refuse with a useful message instead of mounting
+/// the host's /data.
+/// </summary>
+static string? HostPath(string explicitVariable, string leaf)
+{
+    var direct = Environment.GetEnvironmentVariable(explicitVariable);
+    if (!string.IsNullOrWhiteSpace(direct)) return direct;
+
+    var root = Environment.GetEnvironmentVariable("PARALLELS_HOST_ROOT");
+    return string.IsNullOrWhiteSpace(root) ? null : Path.Combine(root, leaf);
+}
 
 static bool ProbeDockerDaemon()
 {
