@@ -9,7 +9,9 @@ namespace Parallels.Contracts;
 /// </summary>
 public sealed record SavedBacktestConfig
 {
-    public required string Id { get; init; }
+    /// <summary>Assigned by the API when absent; see the note on <see cref="BacktestJob.JobId"/>.</summary>
+    public string Id { get; init; } = "";
+
     public required string Name { get; init; }
 
     /// <summary>The run this config was saved from; resolves to a <see cref="BacktestResult"/> and its chart data.</summary>

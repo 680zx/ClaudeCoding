@@ -24,3 +24,6 @@ data/crypto/
 state/
 .env
 .DS_Store
+
+## Vite build output
+src/Parallels.Web/dist/

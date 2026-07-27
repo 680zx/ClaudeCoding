@@ -13,7 +13,16 @@ namespace Parallels.Contracts;
 /// </summary>
 public sealed record BacktestJob
 {
-    public required string JobId { get; init; }
+    /// <summary>
+    /// Assigned by the API when a client does not supply one, which is the
+    /// normal case from the Backtest tab.
+    ///
+    /// Deliberately not <c>required</c>: a required member makes
+    /// System.Text.Json reject any payload that omits it, so binding would fail
+    /// before the API ever got the chance to assign the id. <see cref="Validate"/>
+    /// still enforces that it is set by the time the job is dispatched.
+    /// </summary>
+    public string JobId { get; init; } = "";
 
     /// <summary>Exchange ticker, e.g. BTCUSDT.</summary>
     public required string Symbol { get; init; }

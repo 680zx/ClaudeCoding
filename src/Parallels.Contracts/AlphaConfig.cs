@@ -10,7 +10,8 @@ namespace Parallels.Contracts;
 /// </summary>
 public sealed record AlphaConfig
 {
-    public required string Id { get; init; }
+    /// <summary>Assigned by the API when absent; see the note on <see cref="BacktestJob.JobId"/>.</summary>
+    public string Id { get; init; } = "";
 
     /// <summary>Display name shown on the tile.</summary>
     public required string Name { get; init; }
